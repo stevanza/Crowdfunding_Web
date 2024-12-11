@@ -1,1 +1,69 @@
-/includes/config/config.php
+# IDE dan Editor
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+.DS_Store
+
+# Dependencies
+/vendor/
+/node_modules/
+composer.lock
+package-lock.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+config.php
+
+# Cache dan logs
+/logs/
+*.log
+/cache/
+error_log
+debug.log
+/tmp/
+
+# Upload folders
+/assets/uploads/*
+!/assets/uploads/.gitkeep
+/assets/uploads/campaigns/*
+!/assets/uploads/campaigns/.gitkeep
+/assets/uploads/profiles/*
+!/assets/uploads/profiles/.gitkeep
+
+# Database
+*.sql
+*.sqlite
+*.sqlite3
+/database/*.sqlite
+
+# Files yang mungkin berisi credentials
+/includes/config/database.php
+config.local.php
+
+# Build files
+/dist/
+/build/
+
+# File backup
+*.bak
+*.backup
+*~
+
+# File sistem operasi
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Folder PHPUnit
+/phpunit.xml
+.phpunit.result.cache
+/coverage/
+
+# File temporary
+*.tmp
+*.temp
