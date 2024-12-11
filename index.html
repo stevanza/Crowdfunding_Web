@@ -1,0 +1,368 @@
+<?php
+require_once 'includes/config/database.php';
+require_once 'includes/functions/campaign.php';
+
+// Ambil kampanye terbaru dan terpopuler
+$latestCampaigns = listCampaigns(null, 'active', 6);
+
+// Ambil total donasi
+$conn = connectDB();
+$totalDonations = $conn->query("SELECT SUM(amount) as total FROM donations WHERE payment_status = 'completed'")->fetch_assoc()['total'];
+$totalCampaigns = $conn->query("SELECT COUNT(*) as total FROM campaigns WHERE status = 'active'")->fetch_assoc()['total'];
+$totalDonors = $conn->query("SELECT COUNT(DISTINCT user_id) as total FROM donations")->fetch_assoc()['total'];
+closeDB($conn);
+?>
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FundSocial - Platform Crowdfunding Sosial Indonesia</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Reset CSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            text-decoration: none;
+        }
+
+        .nav-links a {
+            color: #2c3e50;
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #e74c3c;
+        }
+
+        .btn-primary {
+            background-color: #e74c3c;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #c0392b;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding: 0 1rem;
+            margin-top: 60px;
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Stats Section */
+        .stats {
+            background-color: #f8f9fa;
+            padding: 4rem 1rem;
+        }
+
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .stat-item {
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-item i {
+            font-size: 2.5rem;
+            color: #e74c3c;
+            margin-bottom: 1rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+
+        /* Campaign Section */
+        .campaigns {
+            padding: 4rem 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .campaign-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .campaign-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .campaign-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .campaign-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .campaign-content {
+            padding: 1.5rem;
+        }
+
+        .campaign-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+
+        .campaign-description {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .progress-container {
+            margin: 1rem 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: #2ecc71;
+            transition: width 0.3s;
+        }
+
+        .campaign-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .campaign-stats {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .campaign-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <a href="index.php" class="logo">FundSocial</a>
+            <div class="nav-links">
+                <a href="#campaigns">Kampanye</a>
+                <a href="#about">Tentang</a>
+                <?php if(!isset($_SESSION['user_id'])): ?>
+                    <a href="login.php">Masuk</a>
+                    <a href="register.php" class="btn-primary">Daftar</a>
+                <?php else: ?>
+                    <a href="pages/user/dashboard.php">Dashboard</a>
+                    <a href="logout.php">Keluar</a>
+                <?php endif; ?>
+            </div>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Wujudkan Perubahan Sosial Bersama</h1>
+            <p>Bergabunglah dalam gerakan crowdfunding untuk proyek-proyek sosial yang berdampak di Indonesia</p>
+            <?php if(!isset($_SESSION['user_id'])): ?>
+                <a href="register.php" class="btn-primary">Mulai Kampanye</a>
+            <?php else: ?>
+                <a href="pages/campaign/create.php" class="btn-primary">Mulai Kampanye</a>
+            <?php endif; ?>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="stats-container">
+            <div class="stat-item">
+                <i class="fas fa-hand-holding-heart"></i>
+                <div class="stat-number"><?php echo number_format($totalDonations/1000000, 1); ?>M</div>
+                <div class="stat-label">Total Donasi</div>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-project-diagram"></i>
+                <div class="stat-number"><?php echo number_format($totalCampaigns); ?></div>
+                <div class="stat-label">Kampanye Aktif</div>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-users"></i>
+                <div class="stat-number"><?php echo number_format($totalDonors); ?></div>
+                <div class="stat-label">Total Donatur</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="campaigns" id="campaigns">
+        <div class="section-header">
+            <h2>Kampanye Pilihan</h2>
+            <p>Pilih dan dukung kampanye yang sesuai dengan visi Anda</p>
+        </div>
+        
+        <div class="campaign-grid">
+            <?php foreach($latestCampaigns as $campaign): 
+                $progress = ($campaign['current_amount'] / $campaign['target_amount']) * 100;
+                $progress = min($progress, 100); // Cap at 100%
+            ?>
+                <div class="campaign-card">
+                    <img src="<?php echo $campaign['image'] ? 'assets/uploads/campaigns/'.$campaign['image'] : 'assets/images/default-campaign.jpg'; ?>" 
+                         alt="<?php echo htmlspecialchars($campaign['title']); ?>" 
+                         class="campaign-image">
+                    <div class="campaign-content">
+                        <h3 class="campaign-title"><?php echo htmlspecialchars($campaign['title']); ?></h3>
+                        <p class="campaign-description"><?php echo substr(htmlspecialchars($campaign['description']), 0, 100).'...'; ?></p>
+                        
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress" style="width: <?php echo $progress; ?>%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="campaign-footer">
+                            <div class="campaign-stats">
+                                <div>Terkumpul: Rp <?php echo number_format($campaign['current_amount']); ?></div>
+                                <div>Target: Rp <?php echo number_format($campaign['target_amount']); ?></div>
+                            </div>
+                            <a href="pages/campaign/view.php?id=<?php echo $campaign['campaign_id']; ?>" class="btn-primary">Lihat</a>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
+    <?php include 'templates/footer.php'; ?>
+
+    <script>
+        // Tambahkan smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Tambahkan efek scroll untuk header
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                document.querySelector('.header').style.background = 'rgba(255, 255, 255, 0.95)';
+            } else {
+                document.querySelector('.header').style.background = '#fff';
+            }
+        });
+    </script>
+</body>
+</html>
